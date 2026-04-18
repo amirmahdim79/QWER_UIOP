@@ -195,20 +195,24 @@ def print_status():
 		left_pages = SYMBOL_PAGES
 		right_pages = SYMBOL_PAGES
 
+	prev3 = gear_line(left_pages, qwer_gear - 3, right_pages, uiop_gear - 3)
 	prev2 = gear_line(left_pages, qwer_gear - 2, right_pages, uiop_gear - 2)
 	prev1 = gear_line(left_pages, qwer_gear - 1, right_pages, uiop_gear - 1)
 	curr = active_gear_line(left_pages, qwer_gear, right_pages, uiop_gear)
 	next1 = gear_line(left_pages, qwer_gear + 1, right_pages, uiop_gear + 1)
 	next2 = gear_line(left_pages, qwer_gear + 2, right_pages, uiop_gear + 2)
+	next3 = gear_line(left_pages, qwer_gear + 3, right_pages, uiop_gear + 3)
 	active_numbers = "      4   3   2   1  │  1   2   3   4      "
 
 	print(f"\n {state} {mode_display}")
+	print(f"{DIM}{prev3}{RESET}")
 	print(f"{DIM}{prev2}{RESET}")
 	print(f"{DIM}{prev1}{RESET}")
 	print(f"{HELP_COLOR}{active_numbers}{RESET}")
 	print(curr)
 	print(f"{DIM}{next1}{RESET}")
 	print(f"{DIM}{next2}{RESET}")
+	print(f"{DIM}{next3}{RESET}")
 
 
 def execute_combo(keys):
