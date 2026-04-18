@@ -13,17 +13,40 @@ UIOP_PAGES = [_BLOCKS[i] for i in range(1, len(_BLOCKS), 2)]
 QWER_CHARS = [ch for page in QWER_PAGES for ch in page]
 UIOP_CHARS = [ch for page in UIOP_PAGES for ch in page]
 
+# 🔢 Numbers (0-9)
+NUMBER_PAGES = [["0", "1", "2", "3"], ["4", "5", "6", "7"], ["8", "9", ".", ","]]
+
+# 📍 Common symbols
+SYMBOL_PAGES = [
+	["!", "@", "#", "$"],
+	["%", "^", "&", "*"],
+	["(", ")", "-", "_"],
+	["=", "+", "[", "]"],
+	["{", "}", ";", ":"],
+	["'", "\"", "/", "\\"],
+	["<", ">", "?", "~"],
+	["|", "`", " ", "·"]
+]
+
 QWER_KEYS = ["q", "w", "e", "r"]
 UIOP_KEYS = ["u", "i", "o", "p"]
+MODE_KEYS = ["t", "y"]
 
 # MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS + ["c", "v", "n", "m"])
-MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS + ["t", "y"])
+MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS + MODE_KEYS)
+
+# Character set modes
+MODES = ["letters", "numbers", "symbols"]
+current_mode = "letters"
 
 qwer_gear = 0
 uiop_gear = 0
 active = True
 is_emitting = False
 quit_event = threading.Event()
+
+# Mode tracking
+mode_index = 0
 
 # Chord detection state
 held_keys = set()       # currently held managed keys
@@ -108,6 +131,7 @@ def print_header():
 
 def print_status():
 	state = "▶ ACTIVE" if active else "⏸ PAUSED"
+	mode_display = f"[{current_mode.upper()}]"
 	# ANSI styles (works in modern Windows terminals)
 	RESET = "\033[0m"
 	DIM = "\033[2m"
@@ -160,22 +184,46 @@ def print_status():
 
 		return f" {left_label} {left_text} {ACTIVE_COLOR}│{RESET} {right_text} {right_label}"
 
-	prev_line = gear_line(QWER_PAGES, qwer_gear - 1, UIOP_PAGES, uiop_gear - 1)
-	curr_line = active_gear_line(QWER_PAGES, qwer_gear, UIOP_PAGES, uiop_gear)
-	next_line = gear_line(QWER_PAGES, qwer_gear + 1, UIOP_PAGES, uiop_gear + 1)
-	active_numbers = "      4   3   2   1  │  1   2   3   4 	"
+	# Get the appropriate page sets based on mode
+	if current_mode == "letters":
+		left_pages = QWER_PAGES
+		right_pages = UIOP_PAGES
+	elif current_mode == "numbers":
+		left_pages = NUMBER_PAGES
+		right_pages = NUMBER_PAGES
+	else:  # symbols
+		left_pages = SYMBOL_PAGES
+		right_pages = SYMBOL_PAGES
 
-	print(f"\n {state}")
-	print(f"{DIM}{prev_line}{RESET}")
+	prev2 = gear_line(left_pages, qwer_gear - 2, right_pages, uiop_gear - 2)
+	prev1 = gear_line(left_pages, qwer_gear - 1, right_pages, uiop_gear - 1)
+	curr = active_gear_line(left_pages, qwer_gear, right_pages, uiop_gear)
+	next1 = gear_line(left_pages, qwer_gear + 1, right_pages, uiop_gear + 1)
+	next2 = gear_line(left_pages, qwer_gear + 2, right_pages, uiop_gear + 2)
+	active_numbers = "      4   3   2   1  │  1   2   3   4      "
+
+	print(f"\n {state} {mode_display}")
+	print(f"{DIM}{prev2}{RESET}")
+	print(f"{DIM}{prev1}{RESET}")
 	print(f"{HELP_COLOR}{active_numbers}{RESET}")
-	print(curr_line)
-	print(f"{DIM}{next_line}{RESET}")
+	print(curr)
+	print(f"{DIM}{next1}{RESET}")
+	print(f"{DIM}{next2}{RESET}")
 
 
 def execute_combo(keys):
 	"""Execute action for non-overlapping two-key combos."""
-	global qwer_gear, uiop_gear
+	global qwer_gear, uiop_gear, current_mode, mode_index
 	combo = frozenset(keys)
+
+	# Mode switching combo
+	if combo == frozenset({"t", "y"}):
+		mode_index = (mode_index + 1) % len(MODES)
+		current_mode = MODES[mode_index]
+		qwer_gear = 0
+		uiop_gear = 0
+		print_status()
+		return
 
 	# Gear combos
 	if combo == frozenset({"q", "w"}):
@@ -209,38 +257,25 @@ def execute_combo(keys):
 
 def fire_single(key):
 	"""Execute a single-key action."""
-	global qwer_gear, uiop_gear
+	global qwer_gear, uiop_gear, current_mode, mode_index
 
 	shift_held = keyboard.is_pressed("shift")
 
-	if key == "t":
-		qwer_gear = 0
-		print_status()
-		return
-	if key == "y":
-		uiop_gear = 0
-		print_status()
-		return
+	# T and Y are handled as combos (T+Y only)
 
-	# if key == "v":
-	# 	qwer_gear = min(qwer_gear + 1, len(QWER_PAGES) - 1)
-	# 	print_status()
-	# 	return
-	# if key == "c":
-	# 	qwer_gear = max(qwer_gear - 1, 0)
-	# 	print_status()
-	# 	return
-	# if key == "n":
-	# 	uiop_gear = min(uiop_gear + 1, len(UIOP_PAGES) - 1)
-	# 	print_status()
-	# 	return
-	# if key == "m":
-	# 	uiop_gear = max(uiop_gear - 1, 0)
-	# 	print_status()
-	# 	return
+	# Get the correct pages based on mode
+	if current_mode == "letters":
+		left_pages = QWER_PAGES
+		right_pages = UIOP_PAGES
+	elif current_mode == "numbers":
+		left_pages = NUMBER_PAGES
+		right_pages = NUMBER_PAGES
+	else:  # symbols
+		left_pages = SYMBOL_PAGES
+		right_pages = SYMBOL_PAGES
 
-	left = get_page(QWER_PAGES, qwer_gear)
-	right = get_page(UIOP_PAGES, uiop_gear)
+	left = get_page(left_pages, qwer_gear)
+	right = get_page(right_pages, uiop_gear)
 
 	if key in QWER_KEYS:
 		idx = QWER_KEYS.index(key)
@@ -333,8 +368,7 @@ def main():
 	print("  Q+U hold      → ← arrow")
 	print("  R+P hold      → → arrow")
 	print("  W+O hold      → backspace")
-	print("  T key         → reset QWER gear to 0")
-	print("  Y key         → reset UIOP gear to 0")
+	print("  T+Y hold      → cycle through modes (letters/numbers/symbols)")
 	print("  Ctrl+Shift+C  → pause / resume")
 	print("  Ctrl+Shift+Z  → quit")
 	print("  All other keys work normally.")
