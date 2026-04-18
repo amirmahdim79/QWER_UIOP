@@ -265,7 +265,15 @@ def fire_single(key):
 
 	shift_held = keyboard.is_pressed("shift")
 
-	# T and Y are handled as combos (T+Y only)
+	# Handle mode keys
+	if key == "t":
+		qwer_gear = 0
+		print_status()
+		return
+	if key == "y":
+		uiop_gear = 0
+		print_status()
+		return
 
 	# Get the correct pages based on mode
 	if current_mode == "letters":
@@ -363,6 +371,8 @@ def main():
 	print("  Q W E R       → type QWER page letters")
 	print("  U I O P       → type UIOP page letters")
 	print("  Shift+key     → uppercase")
+	print("  T             → reset left gear to 0")
+	print("  Y             → reset right gear to 0")
 	print("  C / V         → left gear down / up")
 	print("  N / M         → right gear up / down")
 	print("  Q+W hold      → left gear down")
