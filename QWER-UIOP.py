@@ -4,18 +4,20 @@ import threading
 # 🔤 English letter frequency (sorted, lowercase)
 FREQUENCY_ORDER = list("etaoinshrdlcumwfgypbvkjxqz")
 
-# Split into two halves: 13 each
-QWER_CHARS = FREQUENCY_ORDER[:13]  # e t a o i n s h r d l c u
-UIOP_CHARS = FREQUENCY_ORDER[13:]  # m w f g y p b v k j x q z
+# Interleaved blocks of 4 from frequency order:
+# block1 -> QWER, block2 -> UIOP, block3 -> QWER, block4 -> UIOP, ...
+_BLOCKS = [FREQUENCY_ORDER[i:i+4] for i in range(0, len(FREQUENCY_ORDER), 4)]
+QWER_PAGES = [_BLOCKS[i] for i in range(0, len(_BLOCKS), 2)]
+UIOP_PAGES = [_BLOCKS[i] for i in range(1, len(_BLOCKS), 2)]
 
-# Pages of 4 for each half
-QWER_PAGES = [QWER_CHARS[i:i+4] for i in range(0, len(QWER_CHARS), 4)]
-UIOP_PAGES = [UIOP_CHARS[i:i+4] for i in range(0, len(UIOP_CHARS), 4)]
+QWER_CHARS = [ch for page in QWER_PAGES for ch in page]
+UIOP_CHARS = [ch for page in UIOP_PAGES for ch in page]
 
 QWER_KEYS = ["q", "w", "e", "r"]
 UIOP_KEYS = ["u", "i", "o", "p"]
 
-MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS + ["c", "v", "n", "m"])
+# MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS + ["c", "v", "n", "m"])
+MANAGED_KEYS = set(QWER_KEYS + UIOP_KEYS)
 
 qwer_gear = 0
 uiop_gear = 0
@@ -45,12 +47,18 @@ def boxed(chars):
 
 def print_header():
 	print("🔤 English letter frequency: " + " ".join(FREQUENCY_ORDER))
-	print("   Left half (QWER):  " + " ".join(QWER_CHARS))
-	print("   Right half (UIOP): " + " ".join(UIOP_CHARS))
+	print("   Interleaved blocks of 4 (QWER/UIOP alternating)")
+	print("   QWER pages: " + " | ".join("".join(page) for page in QWER_PAGES))
+	print("   UIOP pages: " + " | ".join("".join(page) for page in UIOP_PAGES))
 
 
 def print_status():
 	state = "▶ ACTIVE" if active else "⏸ PAUSED"
+	# ANSI styles (works in modern Windows terminals)
+	RESET = "\033[0m"
+	DIM = "\033[2m"
+	ACTIVE_COLOR = "\033[1;96m"  # bright cyan
+	HELP_COLOR = "\033[1;93m"    # bright yellow
 
 	def gear_line(left_pages, left_gear, right_pages, right_gear):
 		if 0 <= left_gear < len(left_pages):
@@ -72,11 +80,13 @@ def print_status():
 	prev_line = gear_line(QWER_PAGES, qwer_gear - 1, UIOP_PAGES, uiop_gear - 1)
 	curr_line = gear_line(QWER_PAGES, qwer_gear, UIOP_PAGES, uiop_gear)
 	next_line = gear_line(QWER_PAGES, qwer_gear + 1, UIOP_PAGES, uiop_gear + 1)
+	active_numbers = "      4   3   2   1  │  1   2   3   4 	"
 
 	print(f"\n {state}")
-	print(prev_line)
-	print(curr_line)
-	print(next_line)
+	print(f"{DIM}{prev_line}{RESET}")
+	print(f"{HELP_COLOR}{active_numbers}{RESET}")
+	print(f"{ACTIVE_COLOR}{curr_line}{RESET}")
+	print(f"{DIM}{next_line}{RESET}")
 
 
 def emit_char(char, shift_held):
@@ -107,19 +117,19 @@ def execute_combo(keys):
 
 	# Gear combos
 	if combo == frozenset({"q", "w"}):
-		qwer_gear = max(qwer_gear - 1, 0)
+		uiop_gear = max(uiop_gear - 1, 0)
 		print_status()
 		return
 	if combo == frozenset({"e", "r"}):
-		qwer_gear = min(qwer_gear + 1, len(QWER_PAGES) - 1)
+		uiop_gear = min(uiop_gear + 1, len(QWER_PAGES) - 1)
 		print_status()
 		return
 	if combo == frozenset({"u", "i"}):
-		uiop_gear = min(uiop_gear + 1, len(UIOP_PAGES) - 1)
+		qwer_gear = min(qwer_gear + 1, len(UIOP_PAGES) - 1)
 		print_status()
 		return
 	if combo == frozenset({"o", "p"}):
-		uiop_gear = max(uiop_gear - 1, 0)
+		qwer_gear = max(qwer_gear - 1, 0)
 		print_status()
 		return
 
@@ -141,22 +151,22 @@ def fire_single(key):
 
 	shift_held = keyboard.is_pressed("shift")
 
-	if key == "v":
-		qwer_gear = min(qwer_gear + 1, len(QWER_PAGES) - 1)
-		print_status()
-		return
-	if key == "c":
-		qwer_gear = max(qwer_gear - 1, 0)
-		print_status()
-		return
-	if key == "n":
-		uiop_gear = min(uiop_gear + 1, len(UIOP_PAGES) - 1)
-		print_status()
-		return
-	if key == "m":
-		uiop_gear = max(uiop_gear - 1, 0)
-		print_status()
-		return
+	# if key == "v":
+	# 	qwer_gear = min(qwer_gear + 1, len(QWER_PAGES) - 1)
+	# 	print_status()
+	# 	return
+	# if key == "c":
+	# 	qwer_gear = max(qwer_gear - 1, 0)
+	# 	print_status()
+	# 	return
+	# if key == "n":
+	# 	uiop_gear = min(uiop_gear + 1, len(UIOP_PAGES) - 1)
+	# 	print_status()
+	# 	return
+	# if key == "m":
+	# 	uiop_gear = max(uiop_gear - 1, 0)
+	# 	print_status()
+	# 	return
 
 	left = get_page(QWER_PAGES, qwer_gear)
 	right = get_page(UIOP_PAGES, uiop_gear)
@@ -231,8 +241,8 @@ def quit_app():
 def main():
 	print_header()
 	print("\nControls:")
-	print("  Q W E R       → type left-half letters")
-	print("  U I O P       → type right-half letters")
+	print("  Q W E R       → type QWER page letters")
+	print("  U I O P       → type UIOP page letters")
 	print("  Shift+key     → uppercase")
 	print("  C / V         → left gear down / up")
 	print("  N / M         → right gear up / down")
