@@ -66,10 +66,17 @@ Same layout as v2, now split into clean modules:
 
 **New: word prediction**
 - As you type letters, the floating UI shows up to 4 word suggestions
-- Press **Q+P** to accept the top prediction (deletes prefix, emits full word + space)
+- Accept predictions via chords:
+  - **Q+P** — accept top prediction (quick shortcut)
+  - **C+M** — pick prediction #1
+  - **C+U** — pick prediction #2
+  - **C+I** — pick prediction #3
+  - **C+O** — pick prediction #4
+- Accepting a prediction deletes the typed prefix, emits the full word + space
 - Dictionary-based with frequency ranking (~800 built-in words)
 - Drop a custom word list as `words.json` or `words.txt` for more coverage
-- Learns new words as you type; boosts words you accept
+- **Learns new words** as you type and **persists them** to `user_words.json` between sessions
+- Accepted words get boosted in rank so they appear sooner next time
 
 ## Quick start
 
@@ -96,7 +103,7 @@ python main.py
 | Left arrow          | Q+M          |
 | Right arrow         | C+P          |
 | Backspace           | W+O          |
-| Accept prediction   | Q+P          |
+| Accept prediction   | Q+P (top), C+M (#1), C+U (#2), C+I (#3), C+O (#4) |
 | Space               | Space        |
 | Enter               | Space double-tap |
 | Pause / Resume      | Ctrl+Shift+A |

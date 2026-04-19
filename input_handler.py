@@ -83,13 +83,11 @@ def accept_prediction(index=0):
 	word = state.predictions[index]
 	prefix_len = len(state.current_word)
 
-	# Delete the already-typed prefix
-	for _ in range(prefix_len):
-		send_key("backspace")
-
-	# Emit the completed word + trailing space
+	# Guard the entire operation so the hook ignores all synthetic events
 	state.is_emitting = True
 	try:
+		for _ in range(prefix_len):
+			keyboard.send("backspace")
 		keyboard.write(word + " ")
 	finally:
 		state.is_emitting = False
@@ -98,6 +96,12 @@ def accept_prediction(index=0):
 	state.current_word = ""
 	state.predictions = []
 	state.prediction_active = False
+
+	# Reset multi-tap state so next keystroke starts clean
+	state.last_fired_key = None
+	state.last_fired_time = 0.0
+	state.tap_gear_offset = 0
+
 	refresh_ui()
 
 
