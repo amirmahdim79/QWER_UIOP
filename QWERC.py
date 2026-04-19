@@ -1,5 +1,6 @@
 import keyboard
 import threading
+import time
 
 # 🔤 English letter frequency (sorted, lowercase)
 FREQUENCY_ORDER = list("etaoinshrdlcumwfgypbvkjxqz")
@@ -54,6 +55,12 @@ held_keys = set()        # currently physically held managed keys
 chord_mode = False       # are we in chord mode (2+ keys detected)?
 chord_fired = False      # did we already fire for this chord?
 peak_keys = set()        # largest simultaneous set of keys seen during chord
+
+# Multi-tap gear cycling
+MULTI_TAP_WINDOW = 0.3  # 300ms window to detect repeated taps on same key
+last_fired_key = None       # which key was last fired as single
+last_fired_time = 0.0       # time.time() of last fire
+tap_gear_offset = 0         # how many gears ahead from current gear
 
 # Space double-tap detection
 SPACE_DOUBLE_TAP_WINDOW = 0.3  # 300ms window to detect double-tap
@@ -252,33 +259,50 @@ def execute_combo(keys):
 
 
 def fire_single(key):
-	"""Execute a single-key action."""
-	global qwerc_gear, muiop_gear
+	"""Execute a single-key action with multi-tap gear cycling."""
+	global qwerc_gear, muiop_gear, last_fired_key, last_fired_time, tap_gear_offset
 
 	shift_held = keyboard.is_pressed("shift")
+	now = time.time()
 
 	# Handle mode keys
 	if key == "t":
 		qwerc_gear = 0
+		last_fired_key = None
 		print_status()
 		return
 	if key == "y":
 		muiop_gear = 0
+		last_fired_key = None
 		print_status()
 		return
+
+	# Multi-tap detection: same key tapped again within window?
+	if key == last_fired_key and (now - last_fired_time) < MULTI_TAP_WINDOW:
+		tap_gear_offset += 1
+		# Backspace the previously emitted character
+		send_key("backspace")
+	else:
+		tap_gear_offset = 0
+
+	last_fired_key = key
+	last_fired_time = now
 
 	# Get the correct pages based on mode
 	left_pages, right_pages = get_current_pages()
 
-	left = get_page(left_pages, qwerc_gear)
-	right = get_page(right_pages, muiop_gear)
-
 	if key in QWERC_KEYS:
 		idx = QWERC_KEYS.index(key)
-		emit_char(left[idx], shift_held)
+		num_pages = len(left_pages)
+		effective_gear = (qwerc_gear + tap_gear_offset) % num_pages
+		char_page = get_page(left_pages, effective_gear)
+		emit_char(char_page[idx], shift_held)
 	elif key in MUIOP_KEYS:
 		idx = MUIOP_KEYS.index(key)
-		emit_char(right[idx], shift_held)
+		num_pages = len(right_pages)
+		effective_gear = (muiop_gear + tap_gear_offset) % num_pages
+		char_page = get_page(right_pages, effective_gear)
+		emit_char(char_page[idx], shift_held)
 
 
 def _fire_pending():
