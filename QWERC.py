@@ -1,6 +1,8 @@
 import keyboard
 import threading
 import time
+import tkinter as tk
+import queue
 
 # 🔤 English letter frequency (sorted, lowercase)
 FREQUENCY_ORDER = list("etaoinshrdlcumwfgypbvkjxqz")
@@ -66,6 +68,173 @@ tap_gear_offset = 0         # how many gears ahead from current gear
 SPACE_DOUBLE_TAP_WINDOW = 0.3  # 300ms window to detect double-tap
 space_tap_timer = None
 space_tap_count = 0
+
+# Floating UI
+_ui_queue = queue.Queue()
+_floating_ui = None
+
+
+class FloatingUI:
+	BG = "#1e1e2e"
+	FG = "#cdd6f4"
+	ACTIVE_FG = "#89dceb"
+	ACTIVE_ALT_FG = "#a6e3a1"
+	THUMB_FG = "#cba6f7"
+	DIM_FG = "#585b70"
+	YELLOW_FG = "#f9e2af"
+	MARKER_FG = "#89dceb"
+
+	def __init__(self):
+		self.root = tk.Tk()
+		self.root.title("QWERC")
+		self.root.overrideredirect(True)
+		self.root.attributes("-topmost", True)
+		self.root.attributes("-alpha", 0.92)
+		self.root.configure(bg=self.BG)
+
+		# Draggable
+		self._drag_x = 0
+		self._drag_y = 0
+
+		self.text = tk.Text(
+			self.root, bg=self.BG, fg=self.FG,
+			font=("Consolas", 10), wrap="none",
+			borderwidth=0, highlightthickness=1,
+			highlightbackground="#585b70",
+			cursor="arrow", padx=8, pady=6,
+			width=44, height=1,  # height auto-adjusted
+		)
+		self.text.pack(fill="both", expand=True)
+		self.text.config(state="disabled")
+
+		# Bind drag on the text widget too
+		self.text.bind("<Button-1>", self._start_drag)
+		self.text.bind("<B1-Motion>", self._do_drag)
+		self.root.bind("<Button-1>", self._start_drag)
+		self.root.bind("<B1-Motion>", self._do_drag)
+
+		# Tags
+		self.text.tag_configure("active", foreground=self.ACTIVE_FG, font=("Consolas", 10, "bold"))
+		self.text.tag_configure("active_alt", foreground=self.ACTIVE_ALT_FG, font=("Consolas", 10, "bold"))
+		self.text.tag_configure("thumb", foreground=self.THUMB_FG, font=("Consolas", 10, "bold"))
+		self.text.tag_configure("dim", foreground=self.DIM_FG)
+		self.text.tag_configure("yellow", foreground=self.YELLOW_FG)
+		self.text.tag_configure("header", foreground=self.FG, font=("Consolas", 10, "bold"))
+		self.text.tag_configure("marker_on", foreground=self.MARKER_FG, font=("Consolas", 10, "bold"))
+		self.text.tag_configure("marker_off", foreground=self.DIM_FG)
+
+		# Position near bottom-right of screen
+		self.root.update_idletasks()
+		scr_w = self.root.winfo_screenwidth()
+		scr_h = self.root.winfo_screenheight()
+		self.root.geometry(f"+{scr_w - 500}+{scr_h - 350}")
+
+		self.refresh()
+		self._poll()
+
+	def _start_drag(self, event):
+		self._drag_x = event.x_root - self.root.winfo_x()
+		self._drag_y = event.y_root - self.root.winfo_y()
+
+	def _do_drag(self, event):
+		self.root.geometry(f"+{event.x_root - self._drag_x}+{event.y_root - self._drag_y}")
+
+	def _poll(self):
+		try:
+			while True:
+				_ui_queue.get_nowait()
+				self.refresh()
+		except queue.Empty:
+			pass
+		self.root.after(50, self._poll)
+
+	def _insert(self, text, tag=None):
+		if tag:
+			self.text.insert("end", text, tag)
+		else:
+			self.text.insert("end", text)
+
+	def _boxed_chars(self, chars, active, is_left):
+		"""Insert boxed characters with appropriate colors."""
+		for i, ch in enumerate(chars):
+			if i > 0:
+				self._insert(" ")
+			if active:
+				tag = "active" if i % 2 == 0 else "active_alt"
+			else:
+				tag = "dim"
+			self._insert(f"[{ch}]", tag)
+
+	def refresh(self):
+		self.text.config(state="normal")
+		self.text.delete("1.0", "end")
+
+		state_str = "ACTIVE" if active else "PAUSED"
+		state_icon = "\u25b6" if active else "\u23f8"
+		self._insert(f" {state_icon} {state_str} [{current_mode.upper()}]\n", "header")
+
+		left_pages, right_pages = get_current_pages()
+		max_pg = max(len(left_pages), len(right_pages))
+
+		# Number header
+		self._insert("    ")
+		self._insert("4   3   2   1", "yellow")
+		self._insert("           ")
+		self._insert("1   2   3   4", "yellow")
+		self._insert("\n")
+
+		for g in range(max_pg):
+			left_chars = get_page(left_pages, g) if g < len(left_pages) else ["\u00b7"] * 5
+			right_chars = get_page(right_pages, g) if g < len(right_pages) else ["\u00b7"] * 5
+
+			left_active = (g == qwerc_gear)
+			right_active = (g == muiop_gear)
+
+			# Main line: marker + 4 fingers + separator + 4 fingers + marker
+			if left_active:
+				self._insert(" \u25b6 ", "marker_on")
+			else:
+				self._insert(" \u2715 ", "marker_off")
+
+			self._boxed_chars(left_chars[:4], left_active, True)
+			self._insert("    \u2502    ")
+			self._boxed_chars(right_chars[1:], right_active, False)
+
+			if right_active:
+				self._insert(" \u25c0", "marker_on")
+			else:
+				self._insert(" \u2715", "marker_off")
+			self._insert("\n")
+
+			# Thumb line
+			lt_tag = "thumb" if left_active else "dim"
+			rt_tag = "thumb" if right_active else "dim"
+			self._insert(f"                  ")
+			self._insert(f"[{left_chars[4]}]", lt_tag)
+			self._insert(" \u2502 ")
+			self._insert(f"[{right_chars[0]}]", rt_tag)
+			self._insert("\n")
+
+		# Auto-size height
+		line_count = int(self.text.index("end-1c").split(".")[0])
+		self.text.config(height=line_count)
+
+		self.text.config(state="disabled")
+
+	def run(self):
+		self.root.mainloop()
+
+	def close(self):
+		try:
+			self.root.quit()
+		except Exception:
+			pass
+
+
+def refresh_ui():
+	"""Signal the floating UI to refresh."""
+	if _floating_ui is not None:
+		_ui_queue.put(True)
 
 
 def emit_char(char, shift_held):
@@ -230,6 +399,8 @@ def print_status():
 
 		print(f" {left_marker} {left_text}    │    {right_text} {right_marker}")
 		print(f"                  {lt} │ {rt}")
+
+	refresh_ui()
 
 
 def execute_combo(keys):
@@ -408,9 +579,24 @@ def toggle_pause():
 
 
 def quit_app():
+	global _floating_ui
 	print("\n👋 Quitting...")
 	keyboard.unhook_all()
+	if _floating_ui is not None:
+		_floating_ui.close()
+		_floating_ui = None
 	quit_event.set()
+
+
+def _run_floating_ui():
+	"""Launch the floating UI in a background thread."""
+	global _floating_ui
+	try:
+		_floating_ui = FloatingUI()
+		_floating_ui.run()
+	except Exception as e:
+		print(f"[FloatingUI] Could not start: {e}")
+		_floating_ui = None
 
 
 def main():
@@ -433,6 +619,10 @@ def main():
 	print("  Ctrl+Shift+A  → pause / resume")
 	print("  Ctrl+Shift+Z  → quit")
 	print("  All other keys work normally.")
+
+	# Launch floating UI in background thread
+	ui_thread = threading.Thread(target=_run_floating_ui, daemon=True)
+	ui_thread.start()
 
 	print_status()
 
