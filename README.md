@@ -24,7 +24,7 @@ The goal? Either **type faster** or **type with fewer keys** — I haven't decid
 
 ## Versions
 
-### v1 — `QWER-UIOP.py`
+### v1 — `deprecated/QWER-UIOP.py`
 
 The original prototype. Four fingers per hand:
 
@@ -36,7 +36,7 @@ The original prototype. Four fingers per hand:
 - Chord detection via **key release** (wait for all keys to be released before deciding single vs combo)
 - Mode keys: T / Y
 
-### v2 — `QWERC.py`
+### v2 — `QWERC.py` (legacy single-file version)
 
 Five fingers per hand — adds the thumb:
 
@@ -50,16 +50,37 @@ Five fingers per hand — adds the thumb:
 - Navigation: Q+M (left arrow), C+P (right arrow), W+O (backspace)
 - Mode cycle: T+Y
 
+### v3 — modular refactor + word prediction
+
+Same layout as v2, now split into clean modules:
+
+| File | Purpose |
+|------|---------|
+| `main.py` | Entry point |
+| `config.py` | Constants, key maps, page definitions |
+| `state.py` | Shared mutable state |
+| `chords.py` | Timer-based chord detection |
+| `input_handler.py` | Character emission, combos, prediction integration |
+| `predictor.py` | Word prediction engine |
+| `floating_ui.py` | Tkinter floating overlay |
+
+**New: word prediction**
+- As you type letters, the floating UI shows up to 4 word suggestions
+- Press **Q+P** to accept the top prediction (deletes prefix, emits full word + space)
+- Dictionary-based with frequency ranking (~800 built-in words)
+- Drop a custom word list as `words.json` or `words.txt` for more coverage
+- Learns new words as you type; boosts words you accept
+
 ## Quick start
 
 ```bash
 pip install keyboard
-python QWERC.py
+python main.py
 ```
 
 > Requires **administrator/elevated privileges** on Windows since the `keyboard` library hooks global key events.
 
-## Controls (v2)
+## Controls (v3)
 
 | Action              | Keys         |
 |---------------------|--------------|
@@ -75,6 +96,7 @@ python QWERC.py
 | Left arrow          | Q+M          |
 | Right arrow         | C+P          |
 | Backspace           | W+O          |
+| Accept prediction   | Q+P          |
 | Space               | Space        |
 | Enter               | Space double-tap |
 | Pause / Resume      | Ctrl+Shift+A |
