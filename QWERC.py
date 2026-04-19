@@ -149,12 +149,16 @@ def print_status():
 	ACTIVE_COLOR = "\033[1;96m"  # bright cyan
 	ACTIVE_COLOR_ALT = "\033[1;92m"  # bright green
 	HELP_COLOR = "\033[1;93m"    # bright yellow
+	THUMB_COLOR = "\033[1;95m"   # bright magenta for finger 5 (thumb)
 
-	def colored_boxed(chars, color1, color2):
-		"""Box chars with alternating colors."""
+	def colored_boxed(chars, color1, color2, thumb_idx=None):
+		"""Box chars with alternating colors, thumb in THUMB_COLOR."""
 		result = []
 		for i, c in enumerate(chars):
-			color = color1 if i % 2 == 0 else color2
+			if i == thumb_idx:
+				color = THUMB_COLOR
+			else:
+				color = color1 if i % 2 == 0 else color2
 			result.append(f"{color}[{c}]{RESET}")
 		return " ".join(result)
 
@@ -179,18 +183,18 @@ def print_status():
 		"""Active line with alternating colors."""
 		if 0 <= left_gear < len(left_pages):
 			left_chars = get_page(left_pages, left_gear)
-			left_text = colored_boxed(left_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT)
+			left_text = colored_boxed(left_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
 			left_label = f"{ACTIVE_COLOR}⟨{left_gear}⟩{RESET}"
 		else:
-			left_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT)
+			left_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
 			left_label = f"{ACTIVE_COLOR}⟨-⟩{RESET}"
 
 		if 0 <= right_gear < len(right_pages):
 			right_chars = get_page(right_pages, right_gear)
-			right_text = colored_boxed(right_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT)
+			right_text = colored_boxed(right_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
 			right_label = f"{ACTIVE_COLOR}⟨{right_gear}⟩{RESET}"
 		else:
-			right_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT)
+			right_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
 			right_label = f"{ACTIVE_COLOR}⟨-⟩{RESET}"
 
 		return f" {left_label} {left_text} {ACTIVE_COLOR}│{RESET} {right_text} {right_label}"
@@ -205,13 +209,13 @@ def print_status():
 	next1 = gear_line(left_pages, qwerc_gear + 1, right_pages, muiop_gear + 1)
 	next2 = gear_line(left_pages, qwerc_gear + 2, right_pages, muiop_gear + 2)
 	next3 = gear_line(left_pages, qwerc_gear + 3, right_pages, muiop_gear + 3)
-	active_numbers = "      4   3   2   1   5  │  5   1   2   3   4      "
+	active_numbers = f"      {HELP_COLOR}4   3   2   1{RESET}   {THUMB_COLOR}5{RESET}  │  {THUMB_COLOR}5{RESET}   {HELP_COLOR}1   2   3   4{RESET}      "
 
 	print(f"\n {state} {mode_display}")
 	print(f"{DIM}{prev3}{RESET}")
 	print(f"{DIM}{prev2}{RESET}")
 	print(f"{DIM}{prev1}{RESET}")
-	print(f"{HELP_COLOR}{active_numbers}{RESET}")
+	print(active_numbers)
 	print(curr)
 	print(f"{DIM}{next1}{RESET}")
 	print(f"{DIM}{next2}{RESET}")
