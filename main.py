@@ -9,6 +9,7 @@ from chords import on_key
 from input_handler import print_header, print_status
 from floating_ui import FloatingUI
 from predictor import predictor
+from autocorrect import autocorrector
 
 
 def toggle_pause():
@@ -19,6 +20,7 @@ def toggle_pause():
 def quit_app():
 	print("\n\U0001f44b Quitting...")
 	predictor.save_now()
+	autocorrector.save_now()
 	keyboard.unhook_all()
 	if state.floating_ui is not None:
 		state.floating_ui.close()
@@ -53,6 +55,7 @@ def main():
 	print("  T+Y hold      \u2192 cycle modes (letters/numbers/symbols)")
 	print("  Q+P hold      \u2192 accept top word prediction")
 	print("  C+M/U/I/O     \u2192 accept prediction #1/#2/#3/#4")
+	print("  M+P hold      \u2192 toggle autocorrect on/off")
 	print("  Space         \u2192 space (double-tap \u2192 enter)")
 	print("  Ctrl+Shift+A  \u2192 pause / resume")
 	print("  Ctrl+Shift+Z  \u2192 quit")

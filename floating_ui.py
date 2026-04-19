@@ -107,7 +107,8 @@ class FloatingUI:
 
 		state_str = "ACTIVE" if state.active else "PAUSED"
 		state_icon = "\u25b6" if state.active else "\u23f8"
-		self._insert(f" {state_icon} {state_str} [{state.current_mode.upper()}]\n", "header")
+		ac_str = "AC" if state.autocorrect_enabled else "ac"
+		self._insert(f" {state_icon} {state_str} [{state.current_mode.upper()}] [{ac_str}]\n", "header")
 
 		left_pages, right_pages = get_current_pages()
 		max_pg = max(len(left_pages), len(right_pages))

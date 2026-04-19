@@ -35,6 +35,9 @@ current_word = ""           # characters typed so far in the current word
 predictions = []            # list of predicted words
 prediction_active = False   # whether predictions are currently showing
 
+# Auto-correction
+autocorrect_enabled = False  # toggle on/off with M+P
+
 # Floating UI
 ui_queue = queue.Queue()
 floating_ui = None

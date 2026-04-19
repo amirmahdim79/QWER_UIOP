@@ -48,3 +48,6 @@ PREDICTION_PICK_COMBOS = {
 	frozenset({"c", "o"}): 3,  # C+O → prediction #4
 }
 MAX_PREDICTIONS = 4
+
+# Auto-correction
+AUTOCORRECT_TOGGLE_COMBO = frozenset({"m", "p"})  # M+P to toggle autocorrect on/off

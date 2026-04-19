@@ -8,9 +8,10 @@ import state
 from config import (
 	QWERC_KEYS, MUIOP_KEYS, MODES, QWERC_PAGES, MUIOP_PAGES,
 	NUMBER_PAGES, SYMBOL_PAGES, MULTI_TAP_WINDOW, SPACE_DOUBLE_TAP_WINDOW,
-	PREDICTION_ACCEPT_COMBO, PREDICTION_PICK_COMBOS,
+	PREDICTION_ACCEPT_COMBO, PREDICTION_PICK_COMBOS, AUTOCORRECT_TOGGLE_COMBO,
 )
 from predictor import predictor
+from autocorrect import autocorrector
 
 
 def refresh_ui():
@@ -67,9 +68,25 @@ def send_key(name):
 
 
 def _finish_word():
-	"""End the current word — learn it if long enough, reset prediction."""
-	if len(state.current_word) >= 3:
-		predictor.add_word(state.current_word)
+	"""End the current word — auto-correct if enabled, then learn it."""
+	word = state.current_word
+
+	# Auto-correct before learning
+	if word and state.autocorrect_enabled and state.current_mode == "letters" and len(word) >= 2:
+		corrected, was_corrected = autocorrector.correct(word, predictor._words)
+		if was_corrected:
+			# Replace the typed word with the corrected one
+			state.is_emitting = True
+			try:
+				for _ in range(len(word)):
+					keyboard.send("backspace")
+				keyboard.write(corrected)
+			finally:
+				state.is_emitting = False
+			word = corrected
+
+	if len(word) >= 3:
+		predictor.add_word(word)
 	state.current_word = ""
 	state.predictions = []
 	state.prediction_active = False
@@ -142,6 +159,12 @@ def execute_combo(keys):
 		if combo in PREDICTION_PICK_COMBOS:
 			accept_prediction(PREDICTION_PICK_COMBOS[combo])
 			return
+
+	# Autocorrect toggle
+	if combo == AUTOCORRECT_TOGGLE_COMBO:
+		state.autocorrect_enabled = not state.autocorrect_enabled
+		print_status()
+		return
 
 	# Mode switching combo
 	if combo == frozenset({"t", "y"}):
