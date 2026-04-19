@@ -173,7 +173,7 @@ def print_status():
 	left_pages, right_pages = get_current_pages()
 	max_pages = max(len(left_pages), len(right_pages))
 
-	active_numbers = f"    {HELP_COLOR}4   3   2   1{RESET}   {THUMB_COLOR}5{RESET}  │  {THUMB_COLOR}5{RESET}   {HELP_COLOR}1   2   3   4{RESET}      "
+	active_numbers = f"    {HELP_COLOR}4   3   2   1{RESET}           {HELP_COLOR}1   2   3   4{RESET}"
 
 	print(f"\n {state} {mode_display}")
 	print(active_numbers)
@@ -194,23 +194,42 @@ def print_status():
 		left_active = (g == qwerc_gear)
 		right_active = (g == muiop_gear)
 
-		# Left marker and text
+		# Main line: 4 fingers (indices 0-3 for left, 1-4 for right)
+		left_main = left_chars[:4]
+		right_main = right_chars[1:]
+
+		# Thumb line: index 4 for left, index 0 for right
+		left_thumb = left_chars[4]
+		right_thumb = right_chars[0]
+
+		# Left marker and main text
 		if left_active:
 			left_marker = "▶"
-			left_text = colored_boxed(left_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
+			left_text = colored_boxed(left_main, ACTIVE_COLOR, ACTIVE_COLOR_ALT)
 		else:
 			left_marker = "✕"
-			left_text = boxed(left_chars)
+			left_text = boxed(left_main)
 
-		# Right marker and text
+		# Right marker and main text
 		if right_active:
-			right_text = colored_boxed(right_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
+			right_text = colored_boxed(right_main, ACTIVE_COLOR, ACTIVE_COLOR_ALT)
 			right_marker = "◀"
 		else:
-			right_text = boxed(right_chars)
+			right_text = boxed(right_main)
 			right_marker = "✕"
 
-		print(f" {left_marker} {left_text} │ {right_text} {right_marker}")
+		# Thumb characters
+		if left_active:
+			lt = f"{THUMB_COLOR}[{left_thumb}]{RESET}"
+		else:
+			lt = f"[{left_thumb}]"
+		if right_active:
+			rt = f"{THUMB_COLOR}[{right_thumb}]{RESET}"
+		else:
+			rt = f"[{right_thumb}]"
+
+		print(f" {left_marker} {left_text}    │    {right_text} {right_marker}")
+		print(f"                  {lt} │ {rt}")
 
 
 def execute_combo(keys):
