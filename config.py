@@ -26,7 +26,7 @@ SYMBOL_PAGES = [
 ]
 
 QWERC_KEYS = ["q", "w", "e", "r", "c"]
-MUIOP_KEYS = ["n", "u", "i", "o", "p"]
+MUIOP_KEYS = ["m", "u", "i", "o", "p"]
 MODE_KEYS = ["t", "y"]
 
 MANAGED_KEYS = set(QWERC_KEYS + MUIOP_KEYS + MODE_KEYS)
