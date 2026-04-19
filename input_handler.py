@@ -8,7 +8,7 @@ import state
 from config import (
 	QWERC_KEYS, MUIOP_KEYS, MODES, QWERC_PAGES, MUIOP_PAGES,
 	NUMBER_PAGES, SYMBOL_PAGES, MULTI_TAP_WINDOW, SPACE_DOUBLE_TAP_WINDOW,
-	PREDICTION_ACCEPT_COMBO,
+	PREDICTION_ACCEPT_COMBO, PREDICTION_PICK_COMBOS,
 )
 from predictor import predictor
 
@@ -130,10 +130,14 @@ def execute_combo(keys):
 	combo = frozenset(keys)
 	left_pages, right_pages = get_current_pages()
 
-	# Accept top prediction
-	if combo == PREDICTION_ACCEPT_COMBO and state.prediction_active:
-		accept_prediction(0)
-		return
+	# Accept prediction by slot: C+M/U/I/O for #1-#4, Q+P for #1
+	if state.prediction_active:
+		if combo == PREDICTION_ACCEPT_COMBO:
+			accept_prediction(0)
+			return
+		if combo in PREDICTION_PICK_COMBOS:
+			accept_prediction(PREDICTION_PICK_COMBOS[combo])
+			return
 
 	# Mode switching combo
 	if combo == frozenset({"t", "y"}):

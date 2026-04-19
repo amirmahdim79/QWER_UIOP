@@ -41,4 +41,10 @@ SPACE_DOUBLE_TAP_WINDOW = 0.3  # 300ms window to detect double-tap
 
 # Prediction
 PREDICTION_ACCEPT_COMBO = frozenset({"q", "p"})  # chord to accept top prediction
+PREDICTION_PICK_COMBOS = {
+	frozenset({"c", "m"}): 0,  # C+M → prediction #1
+	frozenset({"c", "u"}): 1,  # C+U → prediction #2
+	frozenset({"c", "i"}): 2,  # C+I → prediction #3
+	frozenset({"c", "o"}): 3,  # C+O → prediction #4
+}
 MAX_PREDICTIONS = 4

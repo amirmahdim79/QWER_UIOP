@@ -10,7 +10,12 @@
 
 import os
 import json
+import threading
 from config import MAX_PREDICTIONS
+
+# Path for persisting user-learned words and rank adjustments
+_USER_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+_USER_WORDS_FILE = os.path.join(_USER_DATA_DIR, "user_words.json")
 
 # ---------------------------------------------------------------------------
 # Built-in fallback: top ~1000 English words by frequency
@@ -114,7 +119,10 @@ class WordPredictor:
 	def __init__(self, word_file=None):
 		# word -> frequency rank (lower = more common)
 		self._words = {}
+		self._dirty = False          # tracks unsaved changes
+		self._save_timer = None      # debounce timer for auto-save
 		self._load(word_file)
+		self._load_user_words()
 
 	def _load(self, word_file):
 		"""Load word list. Try external file first, fall back to built-in."""
@@ -163,14 +171,60 @@ class WordPredictor:
 		"""Learn a new word (user-typed). Assign high frequency (will appear in results)."""
 		wl = word.lower()
 		if wl not in self._words and len(wl) >= 2:
-			# Give it a middling rank so it shows up but doesn't dominate
 			self._words[wl] = len(self._words) // 2
+			self._schedule_save()
 
 	def boost_word(self, word):
 		"""Boost a word's rank after the user accepts it (make it appear sooner)."""
 		wl = word.lower()
 		if wl in self._words and self._words[wl] > 0:
 			self._words[wl] = max(0, self._words[wl] - 5)
+			self._schedule_save()
+
+	# --- Persistence ---
+
+	def _load_user_words(self):
+		"""Merge user-learned words from disk into the dictionary."""
+		if not os.path.isfile(_USER_WORDS_FILE):
+			return
+		try:
+			with open(_USER_WORDS_FILE, "r", encoding="utf-8") as f:
+				data = json.load(f)
+			if isinstance(data, dict):
+				for w, rank in data.items():
+					wl = w.lower()
+					# User data overrides built-in rank (user explicitly learned/boosted)
+					self._words[wl] = rank
+		except Exception:
+			pass
+
+	def _schedule_save(self):
+		"""Debounced save — writes at most once per 5 seconds."""
+		self._dirty = True
+		if self._save_timer is not None:
+			self._save_timer.cancel()
+		self._save_timer = threading.Timer(5.0, self._save_user_words)
+		self._save_timer.daemon = True
+		self._save_timer.start()
+
+	def _save_user_words(self):
+		"""Persist all words with non-default ranks (learned + boosted)."""
+		if not self._dirty:
+			return
+		try:
+			# Save the full dictionary so ranks are preserved across sessions
+			with open(_USER_WORDS_FILE, "w", encoding="utf-8") as f:
+				json.dump(self._words, f, ensure_ascii=False)
+			self._dirty = False
+		except Exception:
+			pass
+
+	def save_now(self):
+		"""Force an immediate save (call on quit)."""
+		if self._save_timer is not None:
+			self._save_timer.cancel()
+			self._save_timer = None
+		self._save_user_words()
 
 
 # Singleton instance — created at import time

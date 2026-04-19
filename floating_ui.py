@@ -151,13 +151,13 @@ class FloatingUI:
 
 		# Prediction bar
 		if state.prediction_active and state.predictions:
+			_pick_labels = ["C+M", "C+U", "C+I", "C+O"]
 			self._insert("\n")
 			self._insert(" \U0001f4a1 ", "pred_label")
-			self._insert(f'"{state.current_word}" \u2192  ', "dim")
+			self._insert(f'\u201c{state.current_word}\u201d \u2192  ', "dim")
 			for i, word in enumerate(state.predictions[:MAX_PREDICTIONS]):
 				tag = "pred_top" if i == 0 else "pred"
-				label = "Q+P" if i == 0 else f" {i+1} "
-				self._insert(f"[{label}]", "pred_label")
+				self._insert(f"[{_pick_labels[i]}]", "pred_label")
 				self._insert(f" {word}  ", tag)
 			self._insert("\n")
 
