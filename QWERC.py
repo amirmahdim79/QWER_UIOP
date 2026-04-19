@@ -162,64 +162,48 @@ def print_status():
 			result.append(f"{color}[{c}]{RESET}")
 		return " ".join(result)
 
-	def gear_line(left_pages, left_gear, right_pages, right_gear):
-		if 0 <= left_gear < len(left_pages):
-			left_text = boxed(get_page(left_pages, left_gear))
-			left_label = f"⟨{left_gear}⟩"
-		else:
-			left_text = boxed(["·", "·", "·", "·", "·"])
-			left_label = "⟨-⟩"
-
-		if 0 <= right_gear < len(right_pages):
-			right_text = boxed(get_page(right_pages, right_gear))
-			right_label = f"⟨{right_gear}⟩"
-		else:
-			right_text = boxed(["·", "·", "·", "·", "·"])
-			right_label = "⟨-⟩"
-
-		return f" {left_label} {left_text} │ {right_text} {right_label}"
-
-	def active_gear_line(left_pages, left_gear, right_pages, right_gear):
-		"""Active line with alternating colors."""
-		if 0 <= left_gear < len(left_pages):
-			left_chars = get_page(left_pages, left_gear)
-			left_text = colored_boxed(left_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
-			left_label = f"{ACTIVE_COLOR}⟨{left_gear}⟩{RESET}"
-		else:
-			left_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
-			left_label = f"{ACTIVE_COLOR}⟨-⟩{RESET}"
-
-		if 0 <= right_gear < len(right_pages):
-			right_chars = get_page(right_pages, right_gear)
-			right_text = colored_boxed(right_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
-			right_label = f"{ACTIVE_COLOR}⟨{right_gear}⟩{RESET}"
-		else:
-			right_text = colored_boxed(["·", "·", "·", "·", "·"], ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
-			right_label = f"{ACTIVE_COLOR}⟨-⟩{RESET}"
-
-		return f" {left_label} {left_text} {ACTIVE_COLOR}│{RESET} {right_text} {right_label}"
-
 	# Get the appropriate page sets based on mode
 	left_pages, right_pages = get_current_pages()
+	max_pages = max(len(left_pages), len(right_pages))
 
-	prev3 = gear_line(left_pages, qwerc_gear - 3, right_pages, muiop_gear - 3)
-	prev2 = gear_line(left_pages, qwerc_gear - 2, right_pages, muiop_gear - 2)
-	prev1 = gear_line(left_pages, qwerc_gear - 1, right_pages, muiop_gear - 1)
-	curr = active_gear_line(left_pages, qwerc_gear, right_pages, muiop_gear)
-	next1 = gear_line(left_pages, qwerc_gear + 1, right_pages, muiop_gear + 1)
-	next2 = gear_line(left_pages, qwerc_gear + 2, right_pages, muiop_gear + 2)
-	next3 = gear_line(left_pages, qwerc_gear + 3, right_pages, muiop_gear + 3)
-	active_numbers = f"      {HELP_COLOR}4   3   2   1{RESET}   {THUMB_COLOR}5{RESET}  │  {THUMB_COLOR}5{RESET}   {HELP_COLOR}1   2   3   4{RESET}      "
+	active_numbers = f"    {HELP_COLOR}4   3   2   1{RESET}   {THUMB_COLOR}5{RESET}  │  {THUMB_COLOR}5{RESET}   {HELP_COLOR}1   2   3   4{RESET}      "
 
 	print(f"\n {state} {mode_display}")
-	print(f"{DIM}{prev3}{RESET}")
-	print(f"{DIM}{prev2}{RESET}")
-	print(f"{DIM}{prev1}{RESET}")
 	print(active_numbers)
-	print(curr)
-	print(f"{DIM}{next1}{RESET}")
-	print(f"{DIM}{next2}{RESET}")
-	print(f"{DIM}{next3}{RESET}")
+
+	for g in range(max_pages):
+		# Left side
+		if g < len(left_pages):
+			left_chars = get_page(left_pages, g)
+		else:
+			left_chars = ["·", "·", "·", "·", "·"]
+
+		# Right side
+		if g < len(right_pages):
+			right_chars = get_page(right_pages, g)
+		else:
+			right_chars = ["·", "·", "·", "·", "·"]
+
+		left_active = (g == qwerc_gear)
+		right_active = (g == muiop_gear)
+
+		# Left marker and text
+		if left_active:
+			left_marker = "▶"
+			left_text = colored_boxed(left_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=4)
+		else:
+			left_marker = "✕"
+			left_text = boxed(left_chars)
+
+		# Right marker and text
+		if right_active:
+			right_text = colored_boxed(right_chars, ACTIVE_COLOR, ACTIVE_COLOR_ALT, thumb_idx=0)
+			right_marker = "◀"
+		else:
+			right_text = boxed(right_chars)
+			right_marker = "✕"
+
+		print(f" {left_marker} {left_text} │ {right_text} {right_marker}")
 
 
 def execute_combo(keys):
