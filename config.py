@@ -51,3 +51,30 @@ MAX_PREDICTIONS = 4
 
 # Auto-correction
 AUTOCORRECT_TOGGLE_COMBO = frozenset({"m", "p"})  # M+P to toggle autocorrect on/off
+
+# 3-key chords — editing & selection
+THREE_KEY_COMBOS = {
+	# Left hand: word-level editing
+	frozenset({"q", "w", "e"}): "delete_word_left",    # Q+W+E → delete word left
+	frozenset({"w", "e", "r"}): "delete_word_right",   # W+E+R → delete word right
+	frozenset({"q", "w", "r"}): "delete_line",         # Q+W+R → delete entire line
+
+	# Right hand: selection & movement
+	frozenset({"u", "i", "o"}): "select_word",         # U+I+O → select word (double-click equivalent)
+	frozenset({"i", "o", "p"}): "select_line",         # I+O+P → select entire line
+	frozenset({"m", "u", "i"}): "word_left",           # M+U+I → move cursor one word left
+	frozenset({"i", "o", "p"}): "select_line",         # I+O+P → select line
+	frozenset({"u", "o", "p"}): "word_right",          # U+O+P → move cursor one word right
+
+	# Cross-hand: clipboard
+	frozenset({"q", "w", "m"}): "copy",                # Q+W+M → copy
+	frozenset({"e", "r", "m"}): "paste",               # E+R+M → paste
+	frozenset({"q", "r", "m"}): "cut",                 # Q+R+M → cut
+	frozenset({"q", "e", "c"}): "undo",                # Q+E+C → undo
+	frozenset({"w", "r", "c"}): "redo",                # W+R+C → redo
+
+	# Tab / navigation
+	frozenset({"q", "w", "c"}): "tab",                 # Q+W+C → tab
+	frozenset({"m", "o", "p"}): "home",                # M+O+P → home
+	frozenset({"m", "u", "p"}): "end",                 # M+U+P → end
+}

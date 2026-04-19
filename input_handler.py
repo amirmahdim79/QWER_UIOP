@@ -9,6 +9,7 @@ from config import (
 	QWERC_KEYS, MUIOP_KEYS, MODES, QWERC_PAGES, MUIOP_PAGES,
 	NUMBER_PAGES, SYMBOL_PAGES, MULTI_TAP_WINDOW, SPACE_DOUBLE_TAP_WINDOW,
 	PREDICTION_ACCEPT_COMBO, PREDICTION_PICK_COMBOS, AUTOCORRECT_TOGGLE_COMBO,
+	THREE_KEY_COMBOS,
 )
 from predictor import predictor
 from autocorrect import autocorrector
@@ -146,10 +147,57 @@ def handle_space():
 		state.space_tap_timer.start()
 
 
+def _execute_three_key(action):
+	"""Handle 3-key chord actions."""
+	_finish_word()
+	state.is_emitting = True
+	try:
+		if action == "delete_word_left":
+			keyboard.send("ctrl+backspace")
+		elif action == "delete_word_right":
+			keyboard.send("ctrl+delete")
+		elif action == "delete_line":
+			keyboard.send("home")
+			keyboard.send("shift+end")
+			keyboard.send("backspace")
+		elif action == "select_word":
+			keyboard.send("ctrl+shift+left")
+		elif action == "select_line":
+			keyboard.send("home")
+			keyboard.send("shift+end")
+		elif action == "word_left":
+			keyboard.send("ctrl+left")
+		elif action == "word_right":
+			keyboard.send("ctrl+right")
+		elif action == "copy":
+			keyboard.send("ctrl+c")
+		elif action == "paste":
+			keyboard.send("ctrl+v")
+		elif action == "cut":
+			keyboard.send("ctrl+x")
+		elif action == "undo":
+			keyboard.send("ctrl+z")
+		elif action == "redo":
+			keyboard.send("ctrl+y")
+		elif action == "tab":
+			keyboard.send("tab")
+		elif action == "home":
+			keyboard.send("home")
+		elif action == "end":
+			keyboard.send("end")
+	finally:
+		state.is_emitting = False
+
+
 def execute_combo(keys):
-	"""Execute action for two-key combos."""
+	"""Execute action for key combos (2-key and 3-key)."""
 	combo = frozenset(keys)
 	left_pages, right_pages = get_current_pages()
+
+	# 3-key chords
+	if combo in THREE_KEY_COMBOS:
+		_execute_three_key(THREE_KEY_COMBOS[combo])
+		return
 
 	# Accept prediction by slot: C+M/U/I/O for #1-#4, Q+P for #1
 	if state.prediction_active:

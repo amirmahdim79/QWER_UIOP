@@ -2,3 +2,7 @@ user_words.json
 user_corrections.json
 __pycache__/
 *.pyc
+build/
+dist/
+build_output/
+*.spec

@@ -104,10 +104,31 @@ python main.py
 | Right arrow         | C+P          |
 | Backspace           | W+O          |
 | Accept prediction   | Q+P (top), C+M (#1), C+U (#2), C+I (#3), C+O (#4) |
+| Toggle autocorrect  | M+P          |
 | Space               | Space        |
 | Enter               | Space double-tap |
 | Pause / Resume      | Ctrl+Shift+A |
 | Quit                | Ctrl+Shift+Z |
+
+### 3-key chords
+
+| Action              | Keys         |
+|---------------------|--------------|
+| Delete word left    | Q+W+E        |
+| Delete word right   | W+E+R        |
+| Delete line         | Q+W+R        |
+| Select word         | U+I+O        |
+| Select line         | I+O+P        |
+| Word left           | M+U+I        |
+| Word right          | U+O+P        |
+| Copy                | Q+W+M        |
+| Paste               | E+R+M        |
+| Cut                 | Q+R+M        |
+| Undo                | Q+E+C        |
+| Redo                | W+R+C        |
+| Tab                 | Q+W+C        |
+| Home                | M+O+P        |
+| End                 | M+U+P        |
 
 ## Why?
 
